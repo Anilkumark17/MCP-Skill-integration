@@ -1,6 +1,6 @@
 # SpecGate + MCP Fetch
 
-SpecGate is a Claude Code skill (`specskill.md`) that turns a rough problem statement into a reviewable requirements specification. Nothing becomes a requirement until it passes the gate. The skill uses an MCP `fetch` server to gather citable evidence instead of relying on recall.
+SpecGate is a Claude Code skill (`.claude/skills/specgate/SKILL.md`) that turns a rough problem statement into a reviewable requirements specification. Nothing becomes a requirement until it passes the gate. The skill uses an MCP `fetch` server to gather citable evidence instead of relying on recall.
 
 The skill produces a specification only. It never writes code, design, architecture or estimates.
 
@@ -9,7 +9,7 @@ The skill produces a specification only. It never writes code, design, architect
 ```mermaid
 flowchart LR
     U([User]) -->|"/specgate + problem statement"| CC[Claude Code]
-    CC -->|loads| SK[specskill.md]
+    CC -->|loads| SK[.claude/skills/specgate/SKILL.md]
     CC <-->|stdio, JSON-RPC| MCP[MCP fetch server<br/>uvx mcp-server-fetch]
     MCP -->|HTTPS GET| WEB[(Standards and docs<br/>on the web)]
     CC -->|writes| OUT[spec/&lt;slug&gt;/]
@@ -150,6 +150,15 @@ claude mcp list
 
 `claude mcp list` should show `fetch` as connected. The first start can time out while `uvx` downloads the package. Run `/mcp` to reconnect.
 
+## Skill location
+
+Claude Code registers `/specgate` only from one of these paths:
+
+* `.claude/skills/specgate/SKILL.md` (used here)
+* `.claude/commands/specgate.md`
+
+A file named `specskill.md` in the project root does not create the command. The command name comes from the `name: specgate` line in the skill's frontmatter and the folder name. Restart Claude Code after adding the file so it picks up the skill.
+
 ## Use
 
 ```
@@ -170,5 +179,6 @@ The skill runs only when you invoke it. Answer the questions it asks, and it wri
 
 | Path | Purpose |
 |---|---|
-| `specskill.md` | The SpecGate skill definition |
+| `.claude/skills/specgate/SKILL.md` | The SpecGate skill definition. This is the file Claude Code loads |
+| `specskill.md` | Original copy of the skill. Not loaded by Claude Code. Delete it, or keep it identical to `SKILL.md` |
 | `spec/<slug>/` | Output for one problem statement |
