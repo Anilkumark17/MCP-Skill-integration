@@ -1,0 +1,3 @@
+# Problem statement
+
+Build a local MCP server that provides web page retrieval to AI coding agents. The server shall expose a Fetch tool that accepts a public HTTPS URL and returns the page content as Markdown. It shall reject localhost, private IP addresses, and internal hosts. The server shall run locally using stdio and be usable by Claude Code. It shall handle invalid URLs, network failures, and oversized responses without crashing. The initial release shall support tools only. Authentication, remote deployment, and additional MCP capabilities are out of scope for the initial release. Performance and availability targets are yet to be defined.

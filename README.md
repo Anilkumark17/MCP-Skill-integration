@@ -31,7 +31,7 @@ flowchart TD
     G -->|yes| Q[Ask at most 7 questions<br/>ordered by severity]
     G -->|no| H
     Q --> H[8. Draft<br/>three artifacts and readiness]
-    H --> I[9. Validate<br/>five checks,<br/>at most 2 repair passes]
+    H --> I[9. Validate<br/>six checks and check_trace.py,<br/>at most 2 repair passes]
     I --> J[10. Deliver<br/>verdict, counts,<br/>blocking questions, paths]
     J -->|stakeholder answers| C
 ```
@@ -42,14 +42,16 @@ Each item carries exactly one status. Only a stakeholder answer can make an item
 
 ```mermaid
 stateDiagram-v2
-    [*] --> STATED: in the input, with anchor
-    [*] --> INFERRED: derived by the agent
-    [*] --> UNRESOLVED: cannot be specified yet
-    INFERRED --> EXTERNALLY_SUPPORTED: evidence directly supports it
+    [*] --> STATED: in the input, verbatim, with anchor
+    [*] --> INFERRED: derived by the agent, with reasoning
+    [*] --> SLOT: undefined term, question opened
+    [*] --> UNRESOLVED: sources conflict
+    SLOT --> INFERRED: draft claim written
+    INFERRED --> EXTERNALLY_SUPPORTED: fetched quote matches claim scope
     STATED --> CONFIRMED: stakeholder answer
     INFERRED --> CONFIRMED: stakeholder answer
     EXTERNALLY_SUPPORTED --> CONFIRMED: stakeholder answer
-    UNRESOLVED --> CONFIRMED: stakeholder answer
+    UNRESOLVED --> CONFIRMED: stakeholder decision
     CONFIRMED --> [*]
 ```
 
@@ -60,7 +62,9 @@ flowchart LR
     S{Status is<br/>STATED or CONFIRMED?} -->|no| NC[NEEDS_CLARIFICATION]
     S -->|yes| P{Checks pass<br/>for the item?}
     P -->|no| NC
-    P -->|yes| B{Blocking question<br/>linked?}
+    P -->|yes| A{AC with<br/>threshold?}
+    A -->|no| NC
+    A -->|yes| B{Blocking question<br/>linked?}
     B -->|yes| NC
     B -->|no| R[READY]
 ```
@@ -101,7 +105,7 @@ flowchart TD
 
 ```mermaid
 flowchart LR
-    V[Five checks<br/>Completeness<br/>Consistency<br/>Traceability<br/>Feasibility<br/>Testability] --> K{Result}
+    V[Six checks<br/>Completeness<br/>Consistency<br/>Traceability<br/>Feasibility<br/>Testability<br/>Counts] --> K{Result}
     K --> A[IMPLEMENTATION_READY<br/>all Must items READY,<br/>no blocking question open]
     K --> B[PARTIAL<br/>some READY,<br/>blocking questions remain]
     K --> C[NOT_READY<br/>none READY,<br/>or core priorities unknown]
@@ -167,18 +171,21 @@ A file named `specskill.md` in the project root does not create the command. The
 
 The skill runs only when you invoke it. Answer the questions it asks, and it writes the next version of the three files.
 
-## Specifications produced so far
+## Tests
 
-| Slug | Verdict |
-|---|---|
-| `web-fetch-mcp` | PARTIAL |
-| `multitenant-doc-editor` | NOT_READY |
-| `sovereign-agent-harness` | NOT_READY |
+The test suite lives with the skill in `.claude/skills/specgate/tests/`. `TESTS.md` lists six cases (vague input, clarification round, numeric input, well-specified input, adversarial input, tool reliability) with the outcome each SpecGate rule requires. Run each case with `/specgate`, then audit the output:
+
+```
+python .claude/skills/specgate/scripts/check_trace.py spec/<slug> vN
+```
 
 ## Files
 
 | Path | Purpose |
 |---|---|
-| `.claude/skills/specgate/SKILL.md` | The SpecGate skill definition. This is the file Claude Code loads |
-| `specskill.md` | Original copy of the skill. Not loaded by Claude Code. Delete it, or keep it identical to `SKILL.md` |
-| `spec/<slug>/` | Output for one problem statement |
+| `.claude/skills/specgate/SKILL.md` | The SpecGate skill. This is the file Claude Code loads |
+| `.claude/skills/specgate/scripts/mcp_fetch.py` | Calls the Fetch MCP server over stdio and saves the raw exchange. Used when the session has no `mcp__fetch__fetch` tool |
+| `.claude/skills/specgate/scripts/check_trace.py` | Audits a run: counts by status and readiness, OQs by severity, duplicate IDs, two-way OQ links |
+| `.claude/skills/specgate/tests/` | Test cases and expected outcomes |
+| `.mcp.json` | Registers the Fetch MCP server (`uvx mcp-server-fetch`) for this project |
+| `spec/<slug>/` | Output for one problem statement (created by a run) |
